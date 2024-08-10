@@ -1,4 +1,4 @@
-# Stage 1: Build the application
+# Use Maven image with OpenJDK to build the application
 FROM maven AS build
 
 # Set the working directory inside the container
@@ -11,21 +11,23 @@ RUN mvn dependency:go-offline
 # Copy the source code into the container
 COPY src ./src
 
-# Package the application (skip tests for faster builds)
-RUN mvn clean package -DskipTests
+# Package the application
+RUN mvn clean package
 
-# Stage 2: Create the final image
-FROM openjdk:17-jdk-slim
+######### Distroless Image Begins Here #####################
+
+# Use a distroless Java 17 image to run the application
+FROM gcr.io/distroless/java17-debian11
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the jar file from the build stage
+# Copy the JAR file from the build stage
 COPY --from=build /app/target/demo-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose the port on which the application runs
 EXPOSE 8080
 
 # Command to run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
